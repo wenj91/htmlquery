@@ -7,13 +7,13 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/antchfx/xpath"
+	"github.com/wenj91/util/httpcli"
+	"golang.org/x/net/html"
+	"golang.org/x/net/html/charset"
 	"io"
 	"net/http"
 	"os"
-
-	"github.com/antchfx/xpath"
-	"golang.org/x/net/html"
-	"golang.org/x/net/html/charset"
 )
 
 var _ xpath.NodeNavigator = &NodeNavigator{}
@@ -94,8 +94,40 @@ func QuerySelectorAll(top *html.Node, selector *xpath.Expr) []*html.Node {
 }
 
 // LoadURL loads the HTML document from the specified URL.
-func LoadURL(url string) (*html.Node, error) {
-	resp, err := http.Get(url)
+func LoadURL(urlStr string, proxys ...string) (*html.Node, error) {
+	var resp *http.Response
+	var err error
+	//
+	//if len(proxys) > 0 {
+	//	urli := url.URL{}
+	//	urlproxy, _ := urli.Parse(proxys[0])
+	//	c := http.Client{
+	//		Transport: &http.Transport{
+	//			Proxy: http.ProxyURL(urlproxy),
+	//		},
+	//	}
+	//
+	//	resp, err = c.Get(urlStr)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//}else {
+	//	resp, err = http.Get(urlStr)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//}
+
+	hb := httpcli.NewBuilder(urlStr)
+		//AddHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36").
+		//AddHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
+
+	if len(proxys) > 0 {
+		resp, err = hb.DoWithProxy(proxys[0])
+	}else{
+		resp, err = hb.Do()
+	}
+
 	if err != nil {
 		return nil, err
 	}
